@@ -1,7 +1,18 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
+import {
+  ArrowLeft,
+  Check,
+  CirclePlay,
+  Copy,
+  FileQuestion,
+  Plus,
+  Save,
+  Trash2,
+} from "lucide-react";
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { createRoom } from "@/lib/game.functions";
 import {
   addQuestion,
@@ -20,7 +31,7 @@ export const Route = createFileRoute("/sorular/$setId")({
       { title: "Soru Seti Düzenle — Halat Yarışı" },
       {
         name: "description",
-        content: "Kahoot tarzı düzenleyiciyle soru ekle, düzenle, kopyala veya sil; sonra seti sun.",
+        content: "Soru ekle, düzenle, kopyala veya sil; ardından seti yarışmada sun.",
       },
       { property: "og:title", content: "Soru Seti Düzenle — Halat Yarışı" },
       { property: "og:description", content: "Soru setini hazırla ve yarışmada sun." },
@@ -32,13 +43,7 @@ export const Route = createFileRoute("/sorular/$setId")({
 });
 
 const LETTERS = ["A", "B", "C", "D"] as const;
-const SHAPES: Record<(typeof LETTERS)[number], string> = { A: "▲", B: "◆", C: "●", D: "■" };
-const OPT_BG: Record<(typeof LETTERS)[number], string> = {
-  A: "bg-kh-red",
-  B: "bg-kh-blue",
-  C: "bg-kh-yellow",
-  D: "bg-kh-green",
-};
+type Letter = (typeof LETTERS)[number];
 
 const empty = {
   question: "",
@@ -85,39 +90,39 @@ function QuestionsPage() {
     if (!titleTouched && setInfo.data) setTitle(setInfo.data.title);
   }, [setInfo.data, titleTouched]);
 
-  // Seçili soru listeden kalkarsa (silme vb.) yeni soruya dön
   useEffect(() => {
-    const qs = list.data;
-    if (!qs) return;
-    if (selectedId && !qs.some((q) => q.id === selectedId)) {
+    const questions = list.data;
+    if (!questions) return;
+    if (selectedId && !questions.some((question) => question.id === selectedId)) {
       setSelectedId(null);
       setDraftMode(true);
     }
   }, [list.data, selectedId]);
 
-  // Seçim veya liste değişince formu doldur
   useEffect(() => {
     if (draftMode) {
       setForm({ ...empty });
       return;
     }
-    const q = list.data?.find((x) => x.id === selectedId);
-    if (q)
+    const question = list.data?.find((item) => item.id === selectedId);
+    if (question) {
       setForm({
-        question: q.question,
-        option_a: q.option_a,
-        option_b: q.option_b,
-        option_c: q.option_c,
-        option_d: q.option_d,
-        correct_answer: q.correct_answer.toUpperCase(),
+        question: question.question,
+        option_a: question.option_a,
+        option_b: question.option_b,
+        option_c: question.option_c,
+        option_d: question.option_d,
+        correct_answer: question.correct_answer.toUpperCase(),
       });
+    }
   }, [draftMode, selectedId, list.data]);
 
-  const set = (k: keyof typeof empty, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const set = (key: keyof typeof empty, value: string) =>
+    setForm((current) => ({ ...current, [key]: value }));
 
   const questions = list.data ?? [];
   const total = questions.length;
-  const selectedIndex = questions.findIndex((q) => q.id === selectedId);
+  const selectedIndex = questions.findIndex((question) => question.id === selectedId);
 
   const pickQuestion = (id: string) => {
     setError(null);
@@ -137,16 +142,15 @@ function QuestionsPage() {
   const save = async () => {
     setError(null);
     setNotice(null);
-    const q = form.question.trim();
+    const question = form.question.trim();
     const a = form.option_a.trim();
     const b = form.option_b.trim();
     const c = form.option_c.trim();
     const d = form.option_d.trim();
-    if (!q) return setError("Soru metni gerekli");
+    if (!question) return setError("Soru metni gerekli");
     if (!a || !b) return setError("İlk iki cevap (A ve B) zorunlu");
     const filled: Record<string, string> = { A: a, B: b, C: c, D: d };
-    if (!filled[form.correct_answer])
-      return setError("Doğru cevap olarak dolu bir seçenek seçin");
+    if (!filled[form.correct_answer]) return setError("Doğru cevap olarak dolu bir seçenek seçin");
     if (titleTouched && !title.trim()) return setError("Set başlığı gerekli");
 
     setSaving(true);
@@ -157,19 +161,20 @@ function QuestionsPage() {
         void setInfo.refetch();
       }
       if (draftMode || !selectedId) {
-        const res = await add({ data: { ...form, setId } });
-        setSelectedId(res.id);
+        const result = await add({ data: { ...form, setId } });
+        setSelectedId(result.id);
         setDraftMode(false);
       } else {
         await edit({ data: { ...form, id: selectedId } });
       }
-      setNotice("Kaydedildi ✓");
+      setNotice("Değişiklikler kaydedildi");
       window.setTimeout(() => setNotice(null), 2000);
       await list.refetch();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Kaydedilemedi");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Kaydedilemedi");
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   const del = async () => {
@@ -180,8 +185,8 @@ function QuestionsPage() {
       setSelectedId(null);
       setDraftMode(true);
       await list.refetch();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Silinemedi");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Silinemedi");
     }
   };
 
@@ -189,12 +194,12 @@ function QuestionsPage() {
     if (!selectedId) return;
     setError(null);
     try {
-      const res = await copy({ data: { id: selectedId } });
-      setSelectedId(res.id);
+      const result = await copy({ data: { id: selectedId } });
+      setSelectedId(result.id);
       setDraftMode(false);
       await list.refetch();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Kopyalanamadı");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Kopyalanamadı");
     }
   };
 
@@ -202,215 +207,287 @@ function QuestionsPage() {
     setStarting(true);
     setError(null);
     try {
-      const res = await create({ data: { setId } });
-      void navigate({ to: "/host/$code", params: { code: res.code } });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Yarışma başlatılamadı");
+      const result = await create({ data: { setId } });
+      void navigate({ to: "/host/$code", params: { code: result.code } });
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Yarışma başlatılamadı");
       setStarting(false);
     }
   };
 
   return (
-    <div className="flex h-screen flex-col bg-white">
-      {/* Üst bar */}
-      <header className="flex h-16 shrink-0 items-center gap-3 px-4 shadow-[0_2px_10px_oklch(0.1_0.1_296_/_0.12)] sm:gap-4 sm:px-6">
-        <span className="text-2xl font-black tracking-tight text-kh-purple">
-          Halat<span className="text-kh-yellow">!</span>
-        </span>
-        <input
-          value={title}
-          onChange={(e) => {
-            setTitle(e.target.value);
-            setTitleTouched(true);
-          }}
-          placeholder="Soru setinin başlığını yazın..."
-          className="w-44 rounded-xl border-2 border-border bg-white px-4 py-2 text-base font-extrabold text-foreground outline-none placeholder:text-muted-foreground/60 focus:border-kh-purple sm:w-72"
-        />
-        <div className="ml-auto flex items-center gap-2 sm:gap-3">
-          <span className="hidden text-xs font-extrabold uppercase tracking-wider text-muted-foreground sm:inline">
-            {total} soru
-          </span>
-          <button
-            onClick={() => void navigate({ to: "/sorular" })}
-            className="rounded-xl border-2 border-border px-4 py-2 text-sm font-extrabold text-foreground transition hover:bg-muted sm:px-5"
-          >
-            ÇIKIŞ
-          </button>
-          <button
-            onClick={save}
-            disabled={saving}
-            className="rounded-xl bg-kh-blue px-5 py-2 text-sm font-extrabold text-white shadow-[0_3px_0_oklch(0.4_0.12_257)] transition active:translate-y-0.5 active:shadow-none disabled:opacity-40 sm:px-7 sm:py-2.5"
-          >
-            {saving ? "KAYDEDİLİYOR..." : "KAYDET"}
-          </button>
+    <main className="min-h-screen bg-studio-bg font-studio text-studio-ink">
+      <header className="border-b border-studio-line bg-studio-bg/95 px-4 py-4 backdrop-blur-xl sm:px-6 lg:px-8">
+        <div className="mx-auto grid max-w-[1480px] grid-cols-[minmax(0,1fr)_auto] items-center gap-4 sm:flex sm:justify-between">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-5">
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Soru setlerine dön"
+              title="Soru setlerine dön"
+              onClick={() => void navigate({ to: "/sorular" })}
+              className="h-11 w-11 shrink-0 rounded-lg border border-studio-line text-studio-muted hover:bg-studio-elevated hover:text-studio-ink"
+            >
+              <ArrowLeft />
+            </Button>
+            <div className="min-w-0">
+              <p className="text-xs font-bold uppercase text-studio-yellow">Soru Stüdyosu</p>
+              <input
+                value={title}
+                onChange={(event) => {
+                  setTitle(event.target.value);
+                  setTitleTouched(true);
+                }}
+                placeholder="Soru setinin başlığı"
+                aria-label="Soru seti başlığı"
+                className="mt-0.5 w-full min-w-0 truncate border-0 bg-transparent font-studio-display text-lg text-studio-ink outline-hidden placeholder:text-studio-muted sm:text-2xl"
+              />
+            </div>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2">
+            <span className="hidden border-r border-studio-line pr-4 text-sm font-semibold text-studio-muted md:block">
+              {total} soru
+            </span>
+            <Button
+              onClick={() => void startContest()}
+              disabled={starting || total === 0}
+              className="hidden h-11 rounded-lg bg-studio-elevated px-4 font-bold text-studio-ink hover:bg-studio-line sm:inline-flex"
+            >
+              <CirclePlay />
+              {starting ? "Hazırlanıyor" : "Seti Sun"}
+            </Button>
+            <Button
+              onClick={() => void save()}
+              disabled={saving}
+              className="h-11 rounded-lg bg-studio-yellow px-4 font-bold text-studio-bg shadow-[0_4px_0_var(--studio-blue)] hover:bg-studio-yellow/90 active:translate-y-0.5 active:shadow-none sm:px-6"
+            >
+              <Save />
+              <span className="hidden sm:inline">{saving ? "Kaydediliyor" : "Kaydet"}</span>
+            </Button>
+          </div>
         </div>
       </header>
 
-      <div className="flex min-h-0 flex-1">
-        {/* Sol panel: soru listesi */}
-        <aside className="flex w-56 shrink-0 flex-col border-r-2 border-border bg-white sm:w-64">
-          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
-            <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted-foreground">
-              Sorular
-            </p>
-            {list.isLoading && (
-              <p className="text-sm font-extrabold text-muted-foreground">Yükleniyor...</p>
-            )}
-            {!list.isLoading && total === 0 && (
-              <p className="rounded-2xl bg-muted px-4 py-3 text-sm font-extrabold text-muted-foreground">
-                Henüz soru yok — ilk sorunuzu ekleyin!
-              </p>
-            )}
-            {questions.map((q, i) => {
-              const active = q.id === selectedId && !draftMode;
-              return (
-                <button
-                  key={q.id}
-                  onClick={() => pickQuestion(q.id)}
-                  className={`w-full rounded-2xl border-2 bg-white p-3 text-left transition ${
-                    active
-                      ? "border-kh-purple shadow-[0_4px_14px_oklch(0.5_0.22_285_/_0.3)]"
-                      : "border-border hover:border-kh-purple/50 hover:bg-muted/50"
-                  }`}
-                >
-                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">
-                    {i + 1}. Soru
-                  </span>
-                  <p className="truncate text-sm font-extrabold text-foreground">
-                    {q.question || "Boş soru"}
-                  </p>
-                  <span
-                    className={`mt-1.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-extrabold text-white ${OPT_BG[q.correct_answer.toUpperCase() as (typeof LETTERS)[number]] ?? "bg-muted"}`}
+      <div className="mx-auto grid w-full max-w-[1480px] gap-5 px-4 py-5 sm:px-6 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-7 lg:px-8 lg:py-8">
+        <aside className="min-w-0 lg:sticky lg:top-6 lg:self-start">
+          <div className="border border-studio-line bg-studio-surface">
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-studio-line p-4">
+              <div className="min-w-0">
+                <p className="font-studio-display text-base text-studio-ink">SORULAR</p>
+                <p className="text-xs font-medium text-studio-muted">Set içeriği</p>
+              </div>
+              <Button
+                size="icon"
+                aria-label="Yeni soru ekle"
+                title="Yeni soru ekle"
+                onClick={newQuestion}
+                className="h-10 w-10 shrink-0 rounded-lg bg-studio-yellow text-studio-bg hover:bg-studio-yellow/90"
+              >
+                <Plus />
+              </Button>
+            </div>
+
+            <div className="flex max-h-56 gap-2 overflow-x-auto p-3 lg:max-h-[calc(100vh-260px)] lg:flex-col lg:overflow-y-auto">
+              {list.isLoading && (
+                <p className="p-3 text-sm font-semibold text-studio-muted">Sorular yükleniyor...</p>
+              )}
+              {!list.isLoading && total === 0 && (
+                <div className="min-w-64 border border-dashed border-studio-line bg-studio-bg p-4 lg:min-w-0">
+                  <FileQuestion className="mb-3 h-6 w-6 text-studio-yellow" />
+                  <p className="text-sm font-semibold text-studio-ink">İlk sorunu hazırlamaya başla.</p>
+                </div>
+              )}
+              {questions.map((question, index) => {
+                const active = question.id === selectedId && !draftMode;
+                return (
+                  <Button
+                    key={question.id}
+                    variant="ghost"
+                    onClick={() => pickQuestion(question.id)}
+                    className={`h-auto min-w-56 justify-start rounded-none border p-3 text-left lg:min-w-0 ${
+                      active
+                        ? "border-studio-yellow bg-studio-yellow/10 text-studio-ink"
+                        : "border-transparent bg-studio-bg/50 text-studio-muted hover:border-studio-line hover:bg-studio-elevated hover:text-studio-ink"
+                    }`}
                   >
-                    DOĞRU: {q.correct_answer.toUpperCase()}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-          <div className="space-y-3 border-t-2 border-border p-4">
-            <button
-              onClick={newQuestion}
-              className={`w-full rounded-xl py-3 text-sm font-extrabold text-white shadow-[0_4px_0_oklch(0.4_0.12_257)] transition active:translate-y-0.5 active:shadow-none ${
-                draftMode ? "bg-foreground" : "bg-kh-blue"
-              }`}
-            >
-              + SORU EKLE
-            </button>
-            <button
-              onClick={startContest}
-              disabled={starting || total === 0}
-              className="w-full rounded-xl bg-kh-green py-3 text-sm font-extrabold text-white shadow-[0_4px_0_oklch(0.42_0.14_145)] transition active:translate-y-0.5 active:shadow-none disabled:opacity-40"
-            >
-              {starting ? "HAZIRLANIYOR..." : "BU SETİ SUN"}
-            </button>
+                    <span className={`grid h-8 w-8 shrink-0 place-items-center text-xs font-bold ${active ? "bg-studio-yellow text-studio-bg" : "bg-studio-elevated text-studio-muted"}`}>
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-semibold">{question.question || "Boş soru"}</span>
+                      <span className="mt-0.5 block text-xs text-studio-muted">
+                        Doğru yanıt: {question.correct_answer.toUpperCase()}
+                      </span>
+                    </span>
+                  </Button>
+                );
+              })}
+            </div>
+
+            <div className="border-t border-studio-line p-3">
+              <Button
+                onClick={newQuestion}
+                className={`h-11 w-full rounded-lg font-bold ${draftMode ? "bg-studio-yellow text-studio-bg" : "bg-studio-elevated text-studio-ink hover:bg-studio-line"}`}
+              >
+                <Plus /> Yeni Soru
+              </Button>
+            </div>
           </div>
         </aside>
 
-        {/* Düzenleyici */}
-        <main className="min-h-0 flex-1 overflow-y-auto bg-gradient-to-b from-kh-bg to-kh-bg-deep p-5 sm:p-10">
-          <div className="mx-auto w-full max-w-3xl pb-10">
-            {error && (
-              <p className="mb-4 rounded-2xl bg-white/20 px-4 py-3 text-sm font-extrabold text-white">
-                {error}
+        <section className="studio-enter min-w-0 border border-studio-line bg-studio-surface">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b border-studio-line px-5 py-4 sm:px-7">
+            <div className="min-w-0">
+              <p className="text-xs font-bold uppercase text-studio-blue">
+                {draftMode ? "Yeni Soru" : `Soru ${String((selectedIndex >= 0 ? selectedIndex : 0) + 1).padStart(2, "0")}`}
               </p>
+              <h1 className="mt-1 truncate font-studio-display text-xl text-studio-ink sm:text-2xl">
+                {draftMode ? "SORUNU TASARLA" : "SORUYU DÜZENLE"}
+              </h1>
+            </div>
+            <div className="hidden items-center gap-2 sm:flex">
+              {!draftMode && selectedId && (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Soruyu kopyala"
+                    title="Soruyu kopyala"
+                    onClick={() => void duplicate()}
+                    className="h-10 w-10 rounded-lg border border-studio-line text-studio-muted hover:bg-studio-elevated hover:text-studio-ink"
+                  >
+                    <Copy />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Soruyu sil"
+                    title="Soruyu sil"
+                    onClick={() => void del()}
+                    className="h-10 w-10 rounded-lg border border-studio-line text-studio-danger hover:bg-studio-danger/10 hover:text-studio-danger"
+                  >
+                    <Trash2 />
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="p-5 sm:p-7 lg:p-9">
+            {(error || notice) && (
+              <div
+                role="status"
+                className={`mb-6 flex items-center gap-3 border px-4 py-3 text-sm font-semibold ${
+                  error
+                    ? "border-studio-danger/60 bg-studio-danger/10 text-studio-danger"
+                    : "border-studio-success/60 bg-studio-success/10 text-studio-success"
+                }`}
+              >
+                {notice && <Check className="h-4 w-4" />}
+                {error ?? notice}
+              </div>
             )}
-            {notice && (
-              <p className="mb-4 rounded-2xl bg-kh-green px-4 py-3 text-sm font-extrabold text-white">
-                {notice}
-              </p>
-            )}
 
-            <p className="text-xs font-extrabold uppercase tracking-[0.25em] text-white/70">
-              {draftMode ? "Yeni Soru" : `${(selectedIndex >= 0 ? selectedIndex : 0) + 1}. Soru`}
-            </p>
+            <div>
+              <label htmlFor="question-text" className="mb-2 block text-xs font-bold uppercase text-studio-muted">
+                Soru metni
+              </label>
+              <textarea
+                id="question-text"
+                value={form.question}
+                onChange={(event) => set("question", event.target.value)}
+                rows={4}
+                placeholder="Sorunuzu buraya yazın..."
+                className="w-full resize-none border border-studio-line bg-studio-bg p-5 text-lg font-semibold text-studio-ink outline-hidden placeholder:text-studio-muted/60 focus:border-studio-blue focus:ring-2 focus:ring-studio-blue/20 sm:text-xl"
+              />
+            </div>
 
-            <textarea
-              value={form.question}
-              onChange={(e) => set("question", e.target.value)}
-              rows={2}
-              placeholder="Sorunuzu buraya yazın"
-              className="mt-3 w-full resize-none rounded-2xl bg-white px-6 py-5 text-xl font-extrabold text-foreground shadow-[0_10px_30px_-12px_oklch(0.1_0.1_296_/_0.5)] outline-none placeholder:text-muted-foreground/60 sm:text-2xl"
-            />
+            <div className="mt-7 flex items-center justify-between gap-3">
+              <div>
+                <h2 className="font-studio-display text-base text-studio-ink">CEVAP SEÇENEKLERİ</h2>
+                <p className="mt-1 text-xs text-studio-muted">Doğru yanıtı sağdaki işaretten seç.</p>
+              </div>
+              <span className="shrink-0 border border-studio-line bg-studio-bg px-3 py-1.5 text-xs font-bold text-studio-muted">
+                A–B zorunlu
+              </span>
+            </div>
 
-            <div className="mt-24 grid gap-4 sm:grid-cols-2">
-              {LETTERS.map((l, i) => {
-                const key = `option_${l.toLowerCase()}` as "option_a";
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {LETTERS.map((letter, index) => {
+                const key = `option_${letter.toLowerCase()}` as "option_a";
                 const value = form[key];
-                const correct = form.correct_answer === l;
-                const optional = i >= 2;
+                const correct = form.correct_answer === letter;
+                const optional = index >= 2;
                 return (
                   <div
-                    key={l}
-                    className={`flex items-center gap-3 rounded-2xl p-3 shadow-[0_6px_0_oklch(0.1_0.05_296_/_0.3)] transition ${OPT_BG[l]} ${
-                      correct ? "ring-4 ring-white" : ""
+                    key={letter}
+                    className={`grid min-h-20 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border p-3 transition-colors ${
+                      correct
+                        ? "border-studio-yellow bg-studio-yellow/10"
+                        : "border-studio-line bg-studio-bg focus-within:border-studio-blue"
                     }`}
                   >
-                    <button
-                      type="button"
-                      aria-label={`${l} doğru cevap`}
-                      disabled={!value.trim()}
-                      onClick={() => set("correct_answer", l)}
-                      className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white/25 text-3xl leading-none text-white drop-shadow transition disabled:cursor-not-allowed ${
-                        correct ? "ring-4 ring-white" : ""
-                      }`}
-                    >
-                      {SHAPES[l]}
-                    </button>
+                    <span className={`grid h-11 w-11 shrink-0 place-items-center font-studio-display text-sm ${correct ? "bg-studio-yellow text-studio-bg" : "bg-studio-elevated text-studio-ink"}`}>
+                      {letter}
+                    </span>
                     <input
                       value={value}
-                      onChange={(e) => {
-                        set(key, e.target.value);
-                        // Doğru işaretli seçeneğin metni silinirse işareti A'ya al
-                        if (correct && !e.target.value.trim()) set("correct_answer", "A");
+                      onChange={(event) => {
+                        set(key, event.target.value);
+                        if (correct && !event.target.value.trim()) set("correct_answer", "A");
                       }}
-                      placeholder={optional ? `Cevap ${i + 1} (isteğe bağlı)` : `Cevap ${i + 1}`}
-                      className="w-full min-w-0 bg-transparent text-base font-extrabold text-white outline-none placeholder:text-white/70 sm:text-lg"
+                      placeholder={optional ? "İsteğe bağlı cevap" : `Cevap ${index + 1}`}
+                      aria-label={`${letter} cevap seçeneği`}
+                      className="min-w-0 bg-transparent text-base font-semibold text-studio-ink outline-hidden placeholder:text-studio-muted/60"
                     />
-                    <button
+                    <Button
                       type="button"
-                      aria-label={`${l} doğru cevap işaretle`}
+                      size="icon"
+                      aria-label={`${letter} seçeneğini doğru yanıt olarak işaretle`}
+                      title="Doğru yanıt olarak işaretle"
                       disabled={!value.trim()}
-                      onClick={() => set("correct_answer", l)}
-                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-[3px] text-base font-extrabold transition disabled:opacity-30 ${
+                      onClick={() => set("correct_answer", letter as Letter)}
+                      className={`h-10 w-10 shrink-0 rounded-full border ${
                         correct
-                          ? "border-white bg-white text-foreground"
-                          : "border-white/70 text-transparent hover:border-white"
+                          ? "border-studio-yellow bg-studio-yellow text-studio-bg hover:bg-studio-yellow"
+                          : "border-studio-line bg-transparent text-studio-muted hover:border-studio-yellow hover:bg-studio-yellow/10 hover:text-studio-yellow"
                       }`}
                     >
-                      ✓
-                    </button>
+                      <Check />
+                    </Button>
                   </div>
                 );
               })}
             </div>
 
-            <p className="mt-4 text-xs font-extrabold text-white/70">
-              Doğru cevabı seçmek için renkli kutuya veya ✓ düğmesine dokun. İlk iki cevap zorunlu,
-              3. ve 4. cevap isteğe bağlı.
-            </p>
-
-            <div className="mt-8 flex items-center justify-end gap-3">
-              {!draftMode && selectedId && (
-                <>
-                  <button
-                    onClick={duplicate}
-                    className="rounded-xl border-2 border-white/40 bg-white/10 px-6 py-3 text-sm font-extrabold text-white transition hover:bg-white/20"
-                  >
-                    KOPIALA
-                  </button>
-                  <button
-                    onClick={del}
-                    className="rounded-xl border-2 border-white/40 bg-white/10 px-6 py-3 text-sm font-extrabold text-white transition hover:bg-white/20"
-                  >
-                    SİL
-                  </button>
-                </>
-              )}
+            <div className="mt-7 grid gap-3 border-t border-studio-line pt-6 sm:grid-cols-[auto_1fr] sm:items-center">
+              <div className="flex gap-2 sm:hidden">
+                {!draftMode && selectedId && (
+                  <>
+                    <Button onClick={() => void duplicate()} className="h-11 flex-1 rounded-lg bg-studio-elevated text-studio-ink hover:bg-studio-line">
+                      <Copy /> Kopyala
+                    </Button>
+                    <Button onClick={() => void del()} className="h-11 flex-1 rounded-lg bg-studio-danger/10 text-studio-danger hover:bg-studio-danger/20">
+                      <Trash2 /> Sil
+                    </Button>
+                  </>
+                )}
+              </div>
+              <Button
+                onClick={() => void startContest()}
+                disabled={starting || total === 0}
+                className="h-12 rounded-lg bg-studio-elevated px-5 font-bold text-studio-ink hover:bg-studio-line sm:hidden"
+              >
+                <CirclePlay /> {starting ? "Hazırlanıyor" : "Seti Sun"}
+              </Button>
+              <p className="text-xs font-medium text-studio-muted sm:col-start-2 sm:text-right">
+                {draftMode ? "Yeni soru kaydedildiğinde sete eklenecek." : "Bu soru set içinde kayıtlı."}
+              </p>
             </div>
           </div>
-        </main>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }
