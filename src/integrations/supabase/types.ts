@@ -14,7 +14,177 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      answers: {
+        Row: {
+          answer: string
+          created_at: string
+          id: string
+          is_correct: boolean
+          player_id: string
+          question_id: string
+          room_id: string
+        }
+        Insert: {
+          answer: string
+          created_at?: string
+          id?: string
+          is_correct: boolean
+          player_id: string
+          question_id: string
+          room_id: string
+        }
+        Update: {
+          answer?: string
+          created_at?: string
+          id?: string
+          is_correct?: boolean
+          player_id?: string
+          question_id?: string
+          room_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "answers_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "answers_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      players: {
+        Row: {
+          connected: boolean
+          created_at: string
+          id: string
+          last_seen: string
+          name: string
+          room_id: string
+          team: number
+        }
+        Insert: {
+          connected?: boolean
+          created_at?: string
+          id?: string
+          last_seen?: string
+          name: string
+          room_id: string
+          team: number
+        }
+        Update: {
+          connected?: boolean
+          created_at?: string
+          id?: string
+          last_seen?: string
+          name?: string
+          room_id?: string
+          team?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "players_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      questions: {
+        Row: {
+          category: string
+          correct_answer: string
+          created_at: string
+          difficulty: string
+          id: string
+          option_a: string
+          option_b: string
+          option_c: string
+          option_d: string
+          question: string
+          time_limit: number
+        }
+        Insert: {
+          category?: string
+          correct_answer: string
+          created_at?: string
+          difficulty?: string
+          id?: string
+          option_a: string
+          option_b: string
+          option_c: string
+          option_d: string
+          question: string
+          time_limit?: number
+        }
+        Update: {
+          category?: string
+          correct_answer?: string
+          created_at?: string
+          difficulty?: string
+          id?: string
+          option_a?: string
+          option_b?: string
+          option_c?: string
+          option_d?: string
+          question?: string
+          time_limit?: number
+        }
+        Relationships: []
+      }
+      rooms: {
+        Row: {
+          created_at: string
+          current_question: number
+          id: string
+          question_ids: string[]
+          question_started_at: string | null
+          reveal: boolean
+          room_code: string
+          rope_position: number
+          status: string
+          winner: string | null
+        }
+        Insert: {
+          created_at?: string
+          current_question?: number
+          id?: string
+          question_ids?: string[]
+          question_started_at?: string | null
+          reveal?: boolean
+          room_code: string
+          rope_position?: number
+          status?: string
+          winner?: string | null
+        }
+        Update: {
+          created_at?: string
+          current_question?: number
+          id?: string
+          question_ids?: string[]
+          question_started_at?: string | null
+          reveal?: boolean
+          room_code?: string
+          rope_position?: number
+          status?: string
+          winner?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
