@@ -104,6 +104,27 @@ export type Database = {
           },
         ]
       }
+      question_sets: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          title?: string
+        }
+        Relationships: []
+      }
       questions: {
         Row: {
           category: string
@@ -116,6 +137,7 @@ export type Database = {
           option_c: string
           option_d: string
           question: string
+          set_id: string | null
           time_limit: number
         }
         Insert: {
@@ -129,6 +151,7 @@ export type Database = {
           option_c: string
           option_d: string
           question: string
+          set_id?: string | null
           time_limit?: number
         }
         Update: {
@@ -142,9 +165,18 @@ export type Database = {
           option_c?: string
           option_d?: string
           question?: string
+          set_id?: string | null
           time_limit?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "questions_set_id_fkey"
+            columns: ["set_id"]
+            isOneToOne: false
+            referencedRelation: "question_sets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       rooms: {
         Row: {
@@ -156,6 +188,7 @@ export type Database = {
           reveal: boolean
           room_code: string
           rope_position: number
+          set_id: string | null
           status: string
           winner: string | null
         }
@@ -168,6 +201,7 @@ export type Database = {
           reveal?: boolean
           room_code: string
           rope_position?: number
+          set_id?: string | null
           status?: string
           winner?: string | null
         }
@@ -180,10 +214,19 @@ export type Database = {
           reveal?: boolean
           room_code?: string
           rope_position?: number
+          set_id?: string | null
           status?: string
           winner?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "rooms_set_id_fkey"
+            columns: ["set_id"]
+            isOneToOne: false
+            referencedRelation: "question_sets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
