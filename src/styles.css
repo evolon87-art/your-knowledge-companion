@@ -19,6 +19,18 @@
  */
 
 @theme inline {
+  --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
+  --color-team1: var(--team1);
+  --color-team2: var(--team2);
+  --color-panel: var(--panel);
+  --color-kh-bg: var(--kh-bg);
+  --color-kh-bg-deep: var(--kh-bg-deep);
+  --color-kh-red: var(--kh-red);
+  --color-kh-blue: var(--kh-blue);
+  --color-kh-yellow: var(--kh-yellow);
+  --color-kh-green: var(--kh-green);
+  --shadow-panel: 0 24px 60px -24px oklch(0.129 0.042 264.695 / 0.18);
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -62,9 +74,18 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
+  --radius: 1.5rem;
+  --kh-bg: oklch(0.36 0.16 296);
+  --kh-bg-deep: oklch(0.27 0.13 296);
+  --kh-red: oklch(0.55 0.21 25);
+  --kh-blue: oklch(0.52 0.15 257);
+  --kh-yellow: oklch(0.72 0.15 70);
+  --kh-green: oklch(0.62 0.17 145);
+  --background: oklch(0.985 0.004 106);
+  --foreground: oklch(0.16 0.01 264);
+  --panel: oklch(1 0 0);
+  --team1: oklch(0.62 0.14 245);
+  --team2: oklch(0.35 0.05 262);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.129 0.042 264.695);
   --popover: oklch(1 0 0);
@@ -130,6 +151,43 @@
   --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.551 0.027 264.364);
+}
+
+@keyframes tug-strain {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-0.4%);
+  }
+  60% {
+    transform: translateX(0.4%);
+  }
+}
+
+@keyframes tug-pull-1 {
+  0% {
+    transform: translateX(0);
+  }
+  35% {
+    transform: translateX(-3.2%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes tug-pull-2 {
+  0% {
+    transform: translateX(0);
+  }
+  35% {
+    transform: translateX(3.2%);
+  }
+  100% {
+    transform: translateX(0);
+  }
 }
 
 @layer base {

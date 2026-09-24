@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1790233614242,
+      "tag": "0000_create_game_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790233623059,
+      "tag": "0001_add_question_sets",
+      "breakpoints": true
+    }
+  ]
+}
