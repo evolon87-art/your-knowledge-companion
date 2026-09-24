@@ -1,24 +1,69 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
-  component: Index,
+  head: () => ({
+    meta: [
+      { title: "Halat Yarışı — 2 Takımlı Türkçe Bilgi Yarışması" },
+      {
+        name: "description",
+        content:
+          "Sınıf için gerçek zamanlı halat çekme bilgi yarışması. QR kod ile katıl, doğru cevapla halatı takımına çek.",
+      },
+      { property: "og:title", content: "Halat Yarışı — 2 Takımlı Türkçe Bilgi Yarışması" },
+      {
+        property: "og:description",
+        content: "QR kod ile katıl, doğru cevapla halatı kendi takımına çek.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
+  component: Home,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
+function Home() {
+  const navigate = useNavigate();
+  const [code, setCode] = useState("");
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
+    <main className="flex min-h-screen flex-col items-center justify-center bg-background px-5 py-12">
+      <div className="w-full max-w-2xl rounded-[var(--radius)] bg-panel p-8 text-center shadow-[var(--shadow-panel)] sm:p-14">
+        <h1 className="text-5xl font-extrabold tracking-tight text-foreground sm:text-6xl">
+          HALAT YARIŞI
+        </h1>
+
+        <Link
+          to="/sorular"
+          className="mt-10 block w-full rounded-2xl bg-foreground px-8 py-5 text-lg font-bold tracking-wide text-background transition-transform hover:scale-[1.01]"
+        >
+          SORU SETLERİM
+        </Link>
+        <p className="mt-2 text-xs font-semibold text-muted-foreground">
+          Set oluştur, soruları ekle, sonra istediğin seti seçip sun.
+        </p>
+
+        <div className="mt-8 border-t border-border pt-6">
+          <p className="text-sm font-semibold text-muted-foreground">
+            Oyuncu musunuz? Oda kodunu yazın
+          </p>
+          <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+            <input
+              value={code}
+              onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 6))}
+              placeholder="ABX729"
+              className="flex-1 rounded-2xl border-2 border-border bg-background px-5 py-4 text-center text-xl font-bold tracking-[0.3em] outline-none focus:border-team1"
+            />
+            <button
+              onClick={() => code.length >= 4 && navigate({ to: "/play/$code", params: { code } })}
+              className="rounded-2xl bg-team1 px-6 py-4 text-base font-bold text-panel"
+            >
+              KATIL
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
   );
 }
+

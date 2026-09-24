@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1788791824171,
+      "tag": "0000_import_bilgi_ekipmesi_schema_and_questions",
+      "breakpoints": true
+    }
+  ]
+}
